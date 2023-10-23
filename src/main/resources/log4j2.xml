@@ -16,14 +16,14 @@
     </Appenders>
     <Loggers>
         <!-- Root Logger -->
-        <Root level="info">
+        <Root level="INFO">
             <AppenderRef ref="ConsoleAppender"/>
             <AppenderRef ref="FileAppender"/>
         </Root>
-        <Logger name="com.example.auction_server" level="DEBUG" additivity="true">
+        <Logger name="com.ccommit.auction_server" level="DEBUG" additivity="true">
             <AppenderRef ref="FileAppender"/>
         </Logger>
-        <Logger name="com.example.auction_server" level="WARN" additivity="true">
+        <Logger name="com.ccommit.auction_server" level="WARN" additivity="true">
             <AppenderRef ref="WarnFileAppender"/>
         </Logger>
     </Loggers>

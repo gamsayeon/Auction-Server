@@ -73,4 +73,6 @@
 ---
 # ERD(Entity Relationship Diagram)
 ![img.png](img.png)
-
+---
+# 입찰 시퀀스
+![img_1.png](img_1.png)
