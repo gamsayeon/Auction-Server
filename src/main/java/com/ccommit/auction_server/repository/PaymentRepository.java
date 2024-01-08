@@ -1,6 +1,6 @@
 package com.ccommit.auction_server.repository;
 
-import com.ccommit.auction_server.model.toss.Payment;
+import com.ccommit.auction_server.model.Payment;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

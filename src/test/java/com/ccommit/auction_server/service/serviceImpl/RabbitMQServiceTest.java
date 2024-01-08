@@ -6,8 +6,11 @@ import com.ccommit.auction_server.projection.UserProjection;
 import com.ccommit.auction_server.repository.BidRepository;
 import com.ccommit.auction_server.repository.ProductRepository;
 import com.ccommit.auction_server.repository.UserRepository;
+import com.ccommit.auction_server.service.BidPriceValidService;
+import com.ccommit.auction_server.service.EmailService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rabbitmq.client.Channel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,16 +25,17 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 
 @ActiveProfiles("test")
 @DisplayName("RabbitMQService Unit 테스트")
 @ExtendWith(MockitoExtension.class)
 class RabbitMQServiceTest {
     @InjectMocks
-    private RabbitMQService rabbitMQService;
+    private RabbitMQServiceImpl rabbitMQService;
     @Mock
-    private BidPriceValidServiceImpl bidPriceValidService;
+    private BidPriceValidService bidPriceValidService;
     @Mock
     private ProductRepository productRepository;
     @Mock
@@ -39,7 +43,7 @@ class RabbitMQServiceTest {
     @Mock
     private BidRepository bidRepository;
     @Mock
-    private EmailServiceImpl emailService;
+    private EmailService emailService;
     @Mock
     private RabbitTemplate rabbitTemplate;
     @Mock
@@ -55,6 +59,9 @@ class RabbitMQServiceTest {
 
     @Value("${rabbitmq.routing.key}")
     private String routingKey;
+
+    Channel CHANNEL = mock(Channel.class);
+    long TEST_DELIVERY_TAG = 123L;
 
     @BeforeEach
     private void generatedTestRabbitMQ() {
@@ -88,15 +95,15 @@ class RabbitMQServiceTest {
         //given
         ObjectMapper objectMapper = new ObjectMapper();
         String testJsonStr = objectMapper.writeValueAsString(bid);
-        when(bidRepository.save(any(Bid.class))).thenReturn(bid);
-        when(productRepository.findByProductId(TEST_PRODUCT_ID)).thenReturn(product);
+        lenient().when(bidRepository.save(any(Bid.class))).thenReturn(bid);
+        lenient().when(productRepository.findByProductId(TEST_PRODUCT_ID)).thenReturn(product);
         UserProjection testRecipientEmail = () -> {
             return "test@example.com"; // 원하는 이메일 주소로 설정
         };
-        when(userRepository.findUserProjectionById(TEST_SALE_ID)).thenReturn(testRecipientEmail);
-        when(userRepository.findUserProjectionById(product.getSaleId())).thenReturn(testRecipientEmail);
+        lenient().when(userRepository.findUserProjectionById(TEST_SALE_ID)).thenReturn(testRecipientEmail);
+        lenient().when(userRepository.findUserProjectionById(product.getSaleId())).thenReturn(testRecipientEmail);
 
         //when, then
-//        assertDoesNotThrow(() -> rabbitMQService.dequeueMassage(testJsonStr));
+        assertDoesNotThrow(() -> rabbitMQService.dequeueMassage(testJsonStr, CHANNEL, TEST_DELIVERY_TAG));
     }
 }

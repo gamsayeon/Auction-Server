@@ -1,12 +1,14 @@
 package com.ccommit.auction_server.service.serviceImpl;
 
 import com.ccommit.auction_server.dto.BidDTO;
+import com.ccommit.auction_server.enums.ProductStatus;
 import com.ccommit.auction_server.mapper.BidMapper;
 import com.ccommit.auction_server.model.Bid;
-import com.ccommit.auction_server.repository.BidRepository;
-import com.ccommit.auction_server.enums.ProductStatus;
 import com.ccommit.auction_server.model.Product;
+import com.ccommit.auction_server.repository.BidRepository;
 import com.ccommit.auction_server.repository.ProductRepository;
+import com.ccommit.auction_server.service.BidPriceValidService;
+import com.ccommit.auction_server.service.MQService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,9 +35,9 @@ class BidServiceImplTest {
     @Mock
     private ProductRepository productRepository;
     @Mock
-    private RabbitMQService rabbitMQService;
+    private MQService rabbitMQService;
     @Mock
-    private BidPriceValidServiceImpl bidPriceValidService;
+    private BidPriceValidService bidPriceValidService;
     @Mock
     private BidMapper bidMapper;
     private Product product;

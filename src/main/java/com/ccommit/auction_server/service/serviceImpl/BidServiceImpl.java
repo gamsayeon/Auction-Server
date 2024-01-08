@@ -1,15 +1,18 @@
 package com.ccommit.auction_server.service.serviceImpl;
 
 import com.ccommit.auction_server.dto.BidDTO;
+import com.ccommit.auction_server.elasticsearchRepository.BidSelectRepository;
 import com.ccommit.auction_server.enums.ProductStatus;
 import com.ccommit.auction_server.exception.BidFailedNotStartException;
 import com.ccommit.auction_server.exception.NotMatchingException;
 import com.ccommit.auction_server.mapper.BidMapper;
 import com.ccommit.auction_server.model.Bid;
+import com.ccommit.auction_server.model.ELK.DocumentBid;
 import com.ccommit.auction_server.model.Product;
-import com.ccommit.auction_server.repository.BidRepository;
 import com.ccommit.auction_server.repository.ProductRepository;
+import com.ccommit.auction_server.service.BidPriceValidService;
 import com.ccommit.auction_server.service.BidService;
+import com.ccommit.auction_server.service.MQService;
 import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -21,10 +24,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class BidServiceImpl implements BidService {
     private final BidMapper bidMapper;
-    private final RabbitMQService rabbitMQService;
-    private final BidRepository bidRepository;
+    private final MQService rabbitMQService;
     private final ProductRepository productRepository;
-    private final BidPriceValidServiceImpl bidPriceValidService;
+    private final BidPriceValidService bidPriceValidService;
+    private final BidSelectRepository bidSelectRepository;
     private static final Logger logger = LogManager.getLogger(BidServiceImpl.class);
 
     @Override
@@ -46,36 +49,27 @@ public class BidServiceImpl implements BidService {
 
     @Override
     public List<BidDTO> selectBidByUserId(Long buyerId, Long productId) {
-        List<Bid> bids;
+        List<DocumentBid> bids;
         if (productId == null) {
-            bids = bidRepository.findByBuyerId(buyerId);
+            bids = bidSelectRepository.findByBuyerId(buyerId);
+        } else if (!productRepository.existsByProductId(productId)) {
+            logger.warn("해당하는 상품을 찾지 못했습니다.");
+            throw new NotMatchingException("PRODUCT_NOT_MATCH_ID", productId);
         } else {
-            bids = bidRepository.findByBuyerIdAndProductId(buyerId, productId);
-        }
-        if (bids.isEmpty()) {
-            if (!productRepository.existsByProductId(productId)) {
-                logger.warn("해당하는 상품을 찾지 못했습니다.");
-                throw new NotMatchingException("PRODUCT_NOT_MATCH_ID", productId);
-            }
-            logger.warn("아직 경매 이력이 없습니다.");
-            return null;
+            bids = bidSelectRepository.findByBuyerIdAndProductId(buyerId, productId);
         }
 
-        return bidMapper.convertToDTOList(bids);
+        return bidMapper.convertToSelectBidDTOList(bids);
     }
 
     @Override
     public List<BidDTO> selectBidByProduct(Long productId) {
-        Product product = productRepository.findByProductId(productId);
-        if (product == null) {
+        if (!productRepository.existsByProductId(productId)) {
             logger.warn("해당하는 상품을 찾지 못했습니다.");
             throw new NotMatchingException("PRODUCT_NOT_MATCH_ID", productId);
         }
-        List<Bid> bids = bidRepository.findByProductId(productId);
-        if (bids.isEmpty()) {
-            logger.warn("아직 경매 이력이 없습니다.");
-            return null;
-        }
-        return bidMapper.convertToDTOList(bids);
+        List<DocumentBid> bids = bidSelectRepository.findByProductId(productId);
+
+        return bidMapper.convertToSelectBidDTOList(bids);
     }
 }

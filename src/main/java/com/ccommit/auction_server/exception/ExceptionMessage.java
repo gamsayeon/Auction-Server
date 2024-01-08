@@ -63,6 +63,10 @@ public class ExceptionMessage {
         exceptionMessages.put("PAYMENT_AMOUNT_NOT_MATCH", "요청한 금액과 일치 하지 않습니다.");
         exceptionMessages.put("PAYMENT_REFUNDS_FAILED", "환불에 실패하였습니다. 재시도 해주세요.");
         exceptionMessages.put("PAYMENT_ADD_FAILED", "Payment 추가하지 못했습니다.");
+        exceptionMessages.put("PAYMENT_STATUS_FAILED", "결제 상태가 결제 대기가 아닙니다.");
+        //ELK
+        exceptionMessages.put("ENUM_CONVERTERS_ERROR", "해당하는 productStats enum 값은 없습니다.");
+        exceptionMessages.put("BID_NOT_SELECT_BY_PRODUCT_ID", "아직 경매 이력이 없습니다.");
     }
 
     public static String getExceptionMessage(String exceptionCode) {

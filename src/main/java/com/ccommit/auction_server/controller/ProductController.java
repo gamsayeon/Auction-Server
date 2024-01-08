@@ -18,18 +18,15 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/products")
-@Log4j2
 @RequiredArgsConstructor
 @Tag(name = "Product API", description = "Product 관련 API")
 public class ProductController {
@@ -145,7 +142,8 @@ public class ProductController {
         return ResponseEntity.ok(response);
     }
 
-    @Scheduled(cron = "${auction.time.interval}")
+    // TODO: 성능테스트시 불필요한 Schedule 이기에 주석 처리 하였습니다.
+    //    @Scheduled(cron = "${auction.productState.scheduling.updateTime}")
     public void updateProductAuctionStatus() {
         logger.debug("경매상태값을 수정합니다.");
         productService.updateProductStatus();
@@ -181,17 +179,17 @@ public class ProductController {
             method = "GET",
             tags = "Product API",
             operationId = "Search Product By Sort")
-    public ResponseEntity<CommonResponse<SearchProductDTO>> searchProduct(@RequestParam(value = "productName", required = false) String productName,
-                                                                          @RequestParam(value = "saleId", required = false) Long saleId,
-                                                                          @RequestParam(value = "categoryId", required = false) Long categoryId,
-                                                                          @RequestParam(value = "explanation", required = false) String explanation,
-                                                                          @RequestParam(name = "page", defaultValue = "1") int page,
-                                                                          @RequestParam(name = "pageSize", defaultValue = "10") int pageSize,
-                                                                          @RequestParam(value = "sortOrder", defaultValue = "BIDDER_COUNT_DESC", required = false) ProductSortOrder sortOrder,
-                                                                          HttpServletRequest request) {
+    public ResponseEntity<CommonResponse<SearchProductDTO>> searchProductELK(@RequestParam(value = "productName", required = false) String productName,
+                                                                             @RequestParam(value = "saleId", required = false) Long saleId,
+                                                                             @RequestParam(value = "categoryId", required = false) Long categoryId,
+                                                                             @RequestParam(value = "explanation", required = false) String explanation,
+                                                                             @RequestParam(name = "page", defaultValue = "1") int page,
+                                                                             @RequestParam(name = "pageSize", defaultValue = "10") int pageSize,
+                                                                             @RequestParam(value = "sortOrder", defaultValue = "BIDDER_COUNT_DESC", required = false) ProductSortOrder sortOrder,
+                                                                             HttpServletRequest request) {
         logger.debug("상품을 검색합니다.");
         CommonResponse<SearchProductDTO> response = new CommonResponse<>("SUCCESS", "상품검색에 성공했습니다.",
-                request.getRequestURI(), productService.findByKeyword(productName, saleId, categoryId, explanation, page, pageSize, sortOrder));
+                request.getRequestURI(), productService.findByKeywordELK(productName, saleId, categoryId, explanation, page, pageSize, sortOrder));
         return ResponseEntity.ok(response);
     }
 }

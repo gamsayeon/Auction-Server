@@ -18,9 +18,6 @@ import java.util.List;
 @AllArgsConstructor
 @Schema(title = "상품 DTO")
 public class ProductDTO {
-    @Schema(name = "productId", description = "상품 식별자(Auto Increment)", example = "1")
-    private Long productId;
-
     @Schema(name = "saleId", description = "판매자 식별자", example = "1")
     private Long saleId;
 

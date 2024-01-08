@@ -9,7 +9,6 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
@@ -18,7 +17,6 @@ public class CustomExceptionHandler {
     private static final Logger logger = LogManager.getLogger(isExistUserIdlValidator.class);
 
     @ExceptionHandler(value = {RuntimeException.class})
-    @ResponseBody
     public ResponseEntity<Object> handleException(RuntimeException ex, HttpServletRequest request) {
         String exceptionCode = ex.getMessage();
         CommonResponse commonResponse = new CommonResponse(exceptionCode,
@@ -37,7 +35,6 @@ public class CustomExceptionHandler {
     }
 
     @ExceptionHandler(value = {ValidationException.class})
-    @ResponseBody
     public ResponseEntity<Object> handleValidationException(ValidationException ex, HttpServletRequest request) {
         String exceptionCode = ex.getCause().getMessage();
         AuctionCommonException commonException = (AuctionCommonException) ex.getCause();
@@ -49,8 +46,7 @@ public class CustomExceptionHandler {
 
     @ExceptionHandler(value = {DuplicateException.class, AddFailedException.class, NotMatchingException.class,
             InputMismatchException.class, UpdateFailedException.class, UserAccessDeniedException.class,
-            DeleteFailedException.class})
-    @ResponseBody
+            DeleteFailedException.class, EnumConvertersException.class})
     public ResponseEntity<Object> handleAuctionCommonException(AuctionCommonException ex, HttpServletRequest request) {
         String exceptionCode = ex.getMessage();
         CommonResponse commonResponse = new CommonResponse(exceptionCode,

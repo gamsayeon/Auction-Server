@@ -1,30 +1,59 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Configuration status="INFO">
+<Configuration status="info" monitorInterval="30">
+    <Properties>
+        <Property name="LOG_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %l - %msg%n</Property>
+        <Property name="LOG_DIR">logs</Property>
+    </Properties>
+
     <Appenders>
-        <!-- Console Appender -->
-        <Console name="ConsoleAppender" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %l - %msg%n"/>
+        <!-- Console Appender for INFO, DEBUG level -->
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
         </Console>
 
-        <!-- File Appender -->
-        <File name="FileAppender" fileName="logs/application.log">
-            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %l - %msg%n"/>
-        </File>
-        <File name="WarnFileAppender" fileName="logs/application-warn.log">
-            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %l - %msg%n"/>
-        </File>
+        <!-- RollingFile Appender for INFO, DEBUG level -->
+        <RollingFile name="RollingFile" fileName="${LOG_DIR}/application-info.log"
+                     filePattern="${LOG_DIR}/application-info-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="10 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="20"/>
+        </RollingFile>
+
+        <!-- WarnFile Appender for WARN level -->
+        <RollingFile name="WarnRollingFile" fileName="${LOG_DIR}/application-warn.log"
+                     filePattern="${LOG_DIR}/application-warn-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+            <Filters>
+                <ThresholdFilter level="warn" onMatch="ACCEPT" onMismatch="DENY"/>
+            </Filters>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="10 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="20"/>
+        </RollingFile>
     </Appenders>
+
     <Loggers>
-        <!-- Root Logger -->
-        <Root level="INFO">
-            <AppenderRef ref="ConsoleAppender"/>
-            <AppenderRef ref="FileAppender"/>
+        <!-- INFO level logger -->
+        <Logger name="com.ccommit.auction_server" level="debug" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="RollingFile"/>
+        </Logger>
+
+        <!-- DEBUG level logger -->
+        <Logger name="com.ccommit.auction_server" level="debug" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="RollingFile"/>
+        </Logger>
+
+        <!-- Root logger -->
+        <Root level="info">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="RollingFile"/>
         </Root>
-        <Logger name="com.ccommit.auction_server" level="DEBUG" additivity="true">
-            <AppenderRef ref="FileAppender"/>
-        </Logger>
-        <Logger name="com.ccommit.auction_server" level="WARN" additivity="true">
-            <AppenderRef ref="WarnFileAppender"/>
-        </Logger>
     </Loggers>
 </Configuration>

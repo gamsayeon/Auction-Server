@@ -1,4 +1,4 @@
-package com.ccommit.auction_server.model.toss;
+package com.ccommit.auction_server.model;
 
 import com.ccommit.auction_server.enums.PayMethod;
 import com.ccommit.auction_server.enums.PaymentStatus;

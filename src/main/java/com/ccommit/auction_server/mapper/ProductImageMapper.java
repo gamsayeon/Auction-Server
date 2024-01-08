@@ -15,11 +15,11 @@ import java.util.List;
 public class ProductImageMapper {
     private final ModelMapper modelMapper;
 
-    public List<ProductImage> convertToEntity(ProductDTO productDTO) {
+    public List<ProductImage> convertToEntity(ProductDTO productDTO, Long productId) {
         List<ProductImage> productImages = new ArrayList<>();
         for (ProductImageDTO productImageDTO : productDTO.getImageDTOS()) {
             ProductImage productImage = modelMapper.map(productImageDTO, ProductImage.class);
-            productImage.setProductId(productDTO.getProductId());
+            productImage.setProductId(productId);
             productImages.add(productImage);
         }
         return productImages;

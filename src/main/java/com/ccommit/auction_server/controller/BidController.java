@@ -67,7 +67,7 @@ public class BidController {
     @GetMapping("/histories/{productId}")
     public ResponseEntity<CommonResponse<List<BidDTO>>> selectBidByProduct(@PathVariable("productId") Long productId,
                                                                            HttpServletRequest request) {
-        logger.info("판맨자의 경매 이력을 조회합니다.");
+        logger.info("판매자의 경매 이력을 조회합니다.");
         CommonResponse<List<BidDTO>> response = new CommonResponse<>("SUCCESS", "경매를 조회했습니다.",
                 request.getRequestURI(), bidService.selectBidByProduct(productId));
         return ResponseEntity.ok(response);

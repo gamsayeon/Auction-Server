@@ -1,6 +1,7 @@
 package com.ccommit.auction_server.mapper;
 
 import com.ccommit.auction_server.dto.ProductDTO;
+import com.ccommit.auction_server.model.ELK.DocumentProduct;
 import com.ccommit.auction_server.model.Product;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -20,4 +21,10 @@ public class ProductMapper {
         ProductDTO productDTO = modelMapper.map(product, ProductDTO.class);
         return productDTO;
     }
+
+    public ProductDTO convertToSearchDTO(DocumentProduct documentProduct) {
+        ProductDTO searchProductDTO = modelMapper.map(documentProduct, ProductDTO.class);
+        return searchProductDTO;
+    }
+
 }

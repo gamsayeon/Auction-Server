@@ -3,26 +3,33 @@ package com.ccommit.auction_server.service.serviceImpl;
 import com.ccommit.auction_server.dto.ProductDTO;
 import com.ccommit.auction_server.dto.ProductImageDTO;
 import com.ccommit.auction_server.dto.SearchProductDTO;
+import com.ccommit.auction_server.elasticsearchRepository.ProductSearchRepository;
 import com.ccommit.auction_server.enums.ProductSortOrder;
 import com.ccommit.auction_server.enums.ProductStatus;
 import com.ccommit.auction_server.exception.*;
 import com.ccommit.auction_server.mapper.ProductImageMapper;
 import com.ccommit.auction_server.mapper.ProductMapper;
+import com.ccommit.auction_server.model.Bid;
+import com.ccommit.auction_server.model.ELK.DocumentProduct;
 import com.ccommit.auction_server.model.Product;
 import com.ccommit.auction_server.model.ProductImage;
 import com.ccommit.auction_server.projection.UserProjection;
 import com.ccommit.auction_server.repository.*;
+import com.ccommit.auction_server.service.EmailService;
+import com.ccommit.auction_server.service.PaymentService;
 import com.ccommit.auction_server.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -31,14 +38,15 @@ public class ProductServiceImpl implements ProductService {
     private final int TIME_COMPARE = 0;
     private final int DELETE_FAIL = 0;
     private final ProductRepository productRepository;
+    private final ProductSearchRepository productSearchRepository;
     private final ProductMapper productMapper;
     private final CategoryRepository categoryRepository;
     private final ProductImageRepository productImageRepository;
     private final ProductImageMapper productImageMapper;
     private final BidRepository bidRepository;
     private final UserRepository userRepository;
-    private final EmailServiceImpl emailService;
-    private final TossPaymentServiceImpl tossPaymentService;
+    private final EmailService emailService;
+    private final PaymentService tossPaymentService;
     private static final Logger logger = LogManager.getLogger(ProductServiceImpl.class);
 
     @Override
@@ -72,7 +80,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public List<ProductImageDTO> registerProductImage(ProductDTO productDTO, Long productId) {
         List<ProductImage> resultProductImages = new ArrayList<>();
-        List<ProductImage> productImages = productImageMapper.convertToEntity(productDTO);
+        List<ProductImage> productImages = productImageMapper.convertToEntity(productDTO, productId);
         for (ProductImage productImage : productImages) {
             if (productImage.getImagePath() != "") {
                 productImage.setProductId(productId);
@@ -266,16 +274,18 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public SearchProductDTO findByKeyword(String productName, Long saleId, Long categoryId,
-                                          String explanation, int page, int pageSize, ProductSortOrder sortOrder) {
-        List<Product> products = productRepository.searchProducts(productName, saleId, categoryId, explanation, page, pageSize);
-        products = this.sortProducts(sortOrder, products);
+    public SearchProductDTO findByKeywordELK(String productName, Long saleId, Long categoryId,
+                                             String explanation, int page, int pageSize, ProductSortOrder sortOrder) {
+        Pageable pageable = PageRequest.of(page, pageSize);
+
+        Page<DocumentProduct> searchResult = productSearchRepository.searchProducts(productName, saleId, categoryId, explanation, pageable, sortOrder);
+        List<DocumentProduct> searchResultList = searchResult.getContent();
 
         List<ProductDTO> productDTOs = new ArrayList<>();
-        for (Product product : products) {
-            productDTOs.add(productMapper.convertToDTO(product));
+        for (DocumentProduct documentProduct : searchResultList) {
+            productDTOs.add(productMapper.convertToSearchDTO(documentProduct));
         }
-        int totalItems = products.size();
+        int totalItems = (int) searchResult.getTotalElements();
         int totalPages = totalItems / pageSize;
         if (totalItems % pageSize != 0) {
             totalPages++;
@@ -290,98 +300,14 @@ public class ProductServiceImpl implements ProductService {
         return searchProductDTD;
     }
 
-    public List<Product> sortProducts(ProductSortOrder sortOrder, List<Product> products) {
-        switch (sortOrder) {
-            case BIDDER_COUNT_DESC:             //입찰자가 많은 순
-                Collections.sort(products, (p1, p2) -> {
-                    Long productId1 = p1.getProductId();
-                    Long productId2 = p2.getProductId();
-
-                    if (bidRepository.countByProductId(productId1) > bidRepository.countByProductId(productId2)) {
-                        return -1; // p1이 p2보다 작으면 음수 값 반환
-                    } else if (bidRepository.countByProductId(productId1) < bidRepository.countByProductId(productId2)) {
-                        return 1; // p1이 p2보다 크면 양수 값 반환
-                    } else {
-                        return 0; // p1과 p2가 같으면 0 반환
-                    }
-                });
-                break;
-            case HIGHEST_PRICE_DESC:     // 최고 즉시 구매가 순
-                Collections.sort(products, (p1, p2) -> {
-                    double highestPrice1 = p1.getHighestPrice();
-                    double highestPrice2 = p2.getHighestPrice();
-                    if (highestPrice1 < highestPrice2) {
-                        return -1; // p1이 p2보다 작으면 음수 값 반환
-                    } else if (highestPrice1 > highestPrice2) {
-                        return 1; // p1이 p2보다 크면 양수 값 반환
-                    } else {
-                        return 0; // p1과 p2가 같으면 0 반환
-                    }
-                });
-                break;
-            case HIGHEST_PRICE_ASC:     // 최저 즉시 구매가 순
-                Collections.sort(products, (p1, p2) -> {
-                    double highestPrice1 = p1.getHighestPrice();
-                    double highestPrice2 = p2.getHighestPrice();
-                    if (highestPrice1 < highestPrice2) {
-                        return 1; // 역순: p1이 p2보다 작으면 양수 값 반환
-                    } else if (highestPrice1 > highestPrice2) {
-                        return -1; // 역순: p1이 p2보다 크면 음수 값 반환
-                    } else {
-                        return 0; // p1과 p2가 같으면 0 반환
-                    }
-                });
-                break;
-            case BID_PRICE_DESC:             //최고 입찰가 순
-                Collections.sort(products, (p1, p2) -> {
-                    Integer maxPriceProductId1 = this.currentBid(p1.getProductId());
-                    Integer maxPriceProductId2 = this.currentBid(p2.getProductId());
-
-                    if (maxPriceProductId1 > maxPriceProductId2) {
-                        return -1; // p1이 p2보다 작으면 음수 값 반환
-                    } else if (maxPriceProductId1 < maxPriceProductId2) {
-                        return 1; // p1이 p2보다 크면 양수 값 반환
-                    } else {
-                        return 0; // p1과 p2가 같으면 0 반환
-                    }
-                });
-                break;
-            case BID_PRICE_ASC:             //최저 입찰가 순
-                Collections.sort(products, (p1, p2) -> {
-                    Integer maxPriceProductId1 = this.currentBid(p1.getProductId());
-                    Integer maxPriceProductId2 = this.currentBid(p2.getProductId());
-
-                    if (maxPriceProductId1 < maxPriceProductId2) {
-                        return -1; // p1이 p2보다 작으면 음수 값 반환
-                    } else if (maxPriceProductId1 > maxPriceProductId2) {
-                        return 1; // p1이 p2보다 크면 양수 값 반환
-                    } else {
-                        return 0; // p1과 p2가 같으면 0 반환
-                    }
-                });
-                break;
-            case NEWEST_FIRST:                  //등록일 최신 순
-                Collections.sort(products, (p1, p2) -> {
-                    LocalDateTime registerTime1 = p1.getProductRegisterTime();
-                    LocalDateTime registerTime2 = p2.getProductRegisterTime();
-                    return registerTime1.compareTo(registerTime2);
-                });
-                break;
-            case OLDEST_FIRST:                  //등록일 과거 순
-                Collections.sort(products, (p1, p2) -> {
-                    LocalDateTime registerTime1 = p1.getProductRegisterTime();
-                    LocalDateTime registerTime2 = p2.getProductRegisterTime();
-                    return registerTime2.compareTo(registerTime1);
-                });
-                break;
-        }
-        return products;
-    }
-
     public Integer currentBid(Long productId) {
-        Integer maxPriceProductId = bidRepository.findTopByProductIdOrderByPriceDesc(productId).getPrice();
-        if (maxPriceProductId == null)
-            maxPriceProductId = productRepository.findByProductId(productId).getStartPrice();
+        Bid bid = bidRepository.findTopByProductIdOrderByPriceDesc(productId);
+        Integer maxPriceProductId;
+        if (bid == null) {
+            Product product = productRepository.findByProductId(productId);
+            maxPriceProductId = product.getStartPrice();
+        } else maxPriceProductId = bid.getPrice();
+
         return maxPriceProductId;
     }
 

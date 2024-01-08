@@ -9,7 +9,9 @@ import com.ccommit.auction_server.projection.UserProjection;
 import com.ccommit.auction_server.repository.BidRepository;
 import com.ccommit.auction_server.repository.ProductRepository;
 import com.ccommit.auction_server.repository.UserRepository;
+import com.ccommit.auction_server.service.EmailService;
 import com.ccommit.auction_server.service.MQService;
+import com.ccommit.auction_server.service.PaymentService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -31,19 +33,19 @@ import java.io.IOException;
  * 생성자 주입을 자동으로 처리 함
  */
 
-@Profile({"dev"})
+@Profile({"dev", "test", "performance"})
 @RequiredArgsConstructor
 @Service
-public class RabbitMQService implements MQService {
+public class RabbitMQServiceImpl implements MQService {
     private final BidPriceValidServiceImpl bidPriceValidService;
     private final UserRepository userRepository;
-    private final EmailServiceImpl emailService;
+    private final EmailService emailService;
     private final RabbitTemplate rabbitTemplate;
     private final ProductRepository productRepository;
     private final BidRepository bidRepository;
 
-    private final TossPaymentServiceImpl tossPaymentService;
-    private static final Logger logger = LogManager.getLogger(RabbitMQService.class);
+    private final PaymentService tossPaymentService;
+    private static final Logger logger = LogManager.getLogger(RabbitMQServiceImpl.class);
 
     @Value("${rabbitmq.exchange.name}")
     private String exchangeName;
@@ -51,11 +53,11 @@ public class RabbitMQService implements MQService {
     @Value("${rabbitmq.routing.key}")
     private String routingKey;
 
-
     @Override
     public void enqueueMassage(Bid bid) {
         ObjectMapper objectMapper = new ObjectMapper();
         try {
+            //LocalDateTime을 JSON으로 변환하거나 JSON에서 해당 클래스로 역직렬화하기 위해 모듈을 등록하는 코드
             objectMapper.registerModule(new JavaTimeModule());
             String jsonStr = objectMapper.writeValueAsString(bid);
             rabbitTemplate.convertAndSend(exchangeName, routingKey, jsonStr);
@@ -64,6 +66,7 @@ public class RabbitMQService implements MQService {
         }
     }
 
+    @Override
     @RabbitListener(queues = "${rabbitmq.queue.name}")
     public void dequeueMassage(String jsonStr, Channel channel, @Header(AmqpHeaders.DELIVERY_TAG) long tag) throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
@@ -91,6 +94,7 @@ public class RabbitMQService implements MQService {
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         } catch (InputMismatchException e) {
+            //유효성 검사 실패로 인한 exception 발생시 큐에 메세지가 남아있어 해당 메세지 재처리안함(flase)
             channel.basicReject(tag, false);
         }
     }

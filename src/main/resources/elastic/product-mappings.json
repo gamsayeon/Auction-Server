@@ -1,0 +1,45 @@
+{
+  "properties": {
+    "saleId": {
+      "type": "long"
+    },
+    "productName": {
+      "type": "text",
+      "analyzer": "custom_analyzer"
+    },
+    "categoryId": {
+      "type": "long"
+    },
+    "explanation": {
+      "type": "text",
+      "analyzer": "custom_analyzer"
+    },
+    "productRegisterTime": {
+      "type": "date",
+      "format": "strict_date_optional_time||epoch_millis||yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ"
+    },
+    "startPrice": {
+      "type": "double"
+    },
+    "startTime": {
+      "type": "date",
+      "format": "strict_date_optional_time||epoch_millis||yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ"
+    },
+    "endTime": {
+      "type": "date",
+      "format": "strict_date_optional_time||epoch_millis||yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ"
+    },
+    "highestPrice": {
+      "type": "double"
+    },
+    "productStatus": {
+      "type": "integer"
+    },
+    "max_bid_price": {
+      "type": "double"
+    },
+    "bid_count": {
+      "type": "integer"
+    }
+  }
+}

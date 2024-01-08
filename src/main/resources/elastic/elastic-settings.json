@@ -1,0 +1,31 @@
+{
+  "index": {
+    "analysis": {
+      "analyzer": {
+        "custom_analyzer": {
+          "tokenizer": "standard",
+          "filter": [
+            "lowercase",
+            "nori_readingform",
+            "nori_number"
+          ]
+        }
+      },
+      "tokenizer": {
+        "nori_tokenizer": {
+          "type": "nori_tokenizer",
+          "decompound_mode": "mixed"
+        }
+      },
+      "filter": {
+        "nori_readingform": {
+          "type": "nori_readingform",
+          "mode": "mixed"
+        },
+        "nori_number": {
+          "type": "nori_number"
+        }
+      }
+    }
+  }
+}

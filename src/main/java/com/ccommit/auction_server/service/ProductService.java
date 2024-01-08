@@ -19,6 +19,6 @@ public interface ProductService {
 
     void deleteProduct(Long saleId, Long productId);
 
-    SearchProductDTO findByKeyword(String productName, Long saleId, Long categoryId,
-                                   String explanation, int page, int pageSize, ProductSortOrder sortOrder);
+    SearchProductDTO findByKeywordELK(String productName, Long saleId, Long categoryId,
+                                      String explanation, int page, int pageSize, ProductSortOrder sortOrder);
 }

@@ -1,6 +1,7 @@
 package com.ccommit.auction_server.service.serviceImpl;
 
 import com.ccommit.auction_server.enums.ProductStatus;
+import com.ccommit.auction_server.model.Bid;
 import com.ccommit.auction_server.model.Category;
 import com.ccommit.auction_server.model.Product;
 import com.ccommit.auction_server.repository.BidRepository;
@@ -36,13 +37,16 @@ class BidPriceValidServiceImplTest {
     private CategoryRepository categoryRepository;
     private Category category;
     private Product product;
+    private Bid bid;
     private String TEST_CATEGORY_NAME = "testCategoryName";
     private int TEST_BID_MIN_PRICE = 1000;
     private Long TEST_PRODUCT_ID = 1L;
+    private Long TEST_BID_ID = 1L;
     private Long TEST_SALE_ID = 1L;
+    private Long TEST_BUYER_ID = 1L;
     private Long TEST_CATEGORY_ID = 1L;
-    private Integer TEST_CURRENT_PRICE = 3000;
     private Integer TEST_PRICE = 5000;
+    private Integer TEST_BID_PRICE = 2000;
 
     @BeforeEach
     public void generateTestBid() {
@@ -65,6 +69,14 @@ class BidPriceValidServiceImplTest {
                 .highestPrice(100000)
                 .productStatus(ProductStatus.PRODUCT_REGISTRATION)
                 .build();
+
+        bid = Bid.builder()
+                .bidId(TEST_BID_ID)
+                .buyerId(TEST_BUYER_ID)
+                .productId(TEST_PRODUCT_ID)
+                .bidTime(LocalDateTime.now().plus(40, ChronoUnit.MINUTES))
+                .price(1000)
+                .build();
     }
 
     @Test
@@ -73,9 +85,9 @@ class BidPriceValidServiceImplTest {
         //given
         when(productRepository.findByProductId(TEST_PRODUCT_ID)).thenReturn(product);
         when(categoryRepository.findByCategoryId(TEST_CATEGORY_ID)).thenReturn(Optional.of(category));
-        when(bidRepository.findTopByProductIdOrderByPriceDesc(TEST_PRODUCT_ID).getPrice()).thenReturn(TEST_CURRENT_PRICE);
+        when(bidRepository.findTopByProductIdOrderByPriceDesc(TEST_PRODUCT_ID)).thenReturn(bid);
 
         //when, then
-        assertDoesNotThrow(() -> bidPriceValidService.validBidPrice(TEST_PRODUCT_ID, TEST_PRICE));
+        assertDoesNotThrow(() -> bidPriceValidService.validBidPrice(TEST_PRODUCT_ID, TEST_BID_PRICE));
     }
 }
